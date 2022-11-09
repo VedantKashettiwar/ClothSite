@@ -42,14 +42,21 @@ module.exports = mongoose.model('Products', ProductSchema)
 
 
 // Products
-// pid : Objectid
-// sid : Objectid
 // catid : Objectid
-// p_name : String
+// name : String
 // stock : Number
 // price : Number
 // colors : Array
 // sizes : Array
 // material : String
 // product-detail : String
-// st_id : Objectid
+// const a ={
+//     "catid":"636a22c4e0127a08d9712b02",
+//     "name":"Oversize",
+//     "stock":"500",
+//     "price":"780",
+//     "colours":["Black","Red","Blue","Green"],
+//     "sizes":["S","M","L"],
+//     "material":"Cotton",
+//     "product_detail":"Don't wash in washing machine"
+// }
