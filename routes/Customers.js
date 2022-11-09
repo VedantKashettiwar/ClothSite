@@ -6,9 +6,9 @@ const{createCustomers, getCustomers, getCustomersO, updateCustomers, deleteCusto
 
 router.route('/create/').post(createCustomers)
 router.route('/read/').get(getCustomers)
-router.route('/reado/').post(getCustomersO)
-router.route('/update/').post(updateCustomers)
-router.route('/delete/').delete(deleteCustomers)
+router.route('/reado/:_id').get(getCustomersO)
+router.route('/update/:_id').patch(updateCustomers)
+router.route('/delete/:_id').delete(deleteCustomers)
 
 module.exports = router
 

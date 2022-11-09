@@ -80,7 +80,8 @@ const getCustomers = async (req, res) => {
 
 const getCustomersO = async (req, res) => {
     try {
-        const data = req.body._id
+        const data = req.params._id
+        console.log(data)
         const result = await Customer_Infos.findOne({ _id: data })
         res.send(result)
     }
@@ -110,7 +111,7 @@ const createCustomers = async (req, res) => {
 const updateCustomers = async (req, res) => {
     try {
         const data = req.body
-        const result = await Customer_Infos.findByIdAndUpdate({ _id: data._id }, data, { new: true, runValidators: true })
+        const result = await Customer_Infos.findByIdAndUpdate({ _id: req.params._id }, data, { new: true, runValidators: true })
         res.send(result)
     }
     catch (err) {
@@ -121,7 +122,8 @@ const updateCustomers = async (req, res) => {
 
 const deleteCustomers = async (req, res) => {
     try {
-        const data = req.body._id
+        const data = req.params._id
+        console.log(data)
         const result = await Customer_Infos.deleteOne({ _id: data })
         res.send("Deleted Succesfully")
     }
@@ -145,7 +147,7 @@ const getProducts = async (req, res) => {
 
 const getProductsO = async (req, res) => {
     try {
-        const data = req.body._id
+        const data = req.params._id
         const result = await Products.findOne({ _id: data })
         res.send(result)
     }
@@ -175,7 +177,7 @@ const createProducts = async (req, res) => {
 const updateProducts = async (req, res) => {
     try {
         const data = req.body
-        const result = await Products.findByIdAndUpdate({ _id: data._id }, data, { new: true, runValidators: true })
+        const result = await Products.findByIdAndUpdate({ _id: req.params._id }, data, { new: true, runValidators: true })
         res.send(result)
     }
     catch (err) {
@@ -186,7 +188,7 @@ const updateProducts = async (req, res) => {
 
 const deleteProducts = async (req, res) => {
     try {
-        const data = req.body._id
+        const data = req.params._id
         const result = await Products.deleteOne({ _id: data })
         res.send("Deleted Succesfully")
     }
