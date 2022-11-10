@@ -1,0 +1,71 @@
+ {
+        "_id": "636b768fd579a945118ea2ec",
+        "name": "Oversize",
+        "stock": 400,
+        "price": 780,
+        "colors": [
+            "Black",
+            "Red",
+            "Blue",
+            "Green"
+        ],
+        "sizes": [
+            "S",
+            "M",
+            "L"
+        ],
+        "material": "Cotton",
+        "product_detail": "Don't wash in washing machine",
+        "__v": 0,
+        "createdAt": "2022-11-09T09:44:47.044Z",
+        "updatedAt": "2022-11-09T12:39:31.399Z"
+    },
+    {
+        "_id": "636b9ef00ebdee38578414d9",
+        "name": "Slim Fit Jeans",
+        "stock": 650,
+        "price": 1250,
+        "colors": [
+            "Black",
+            "Blue",
+            "Grey"
+        ],
+        "sizes": [
+            "28",
+            "30",
+            "32",
+            "38",
+            "42"
+        ],
+        "material": "Cotton Denim",
+        "product_detail": "Don't iron",
+        "__v": 0,
+        "createdAt": "2022-11-09T12:37:04.122Z",
+        "updatedAt": "2022-11-09T12:37:04.122Z"
+    },
+    {
+        "_id": "636c7ebf2a4115c146dd35ea",
+        "name": "Slim Fit Jeans",
+        "stock": 650,
+        "price": 1250,
+        "colors": [
+            "Black",
+            "Blue",
+            "Grey"
+        ],
+        "sizes": [
+            "28",
+            "30",
+            "32",
+            "38",
+            "42"
+        ],
+        "material": "Cotton Denim",
+        "product_detail": "Don't iron",
+        "__v": 0,
+        "createdAt": "2022-11-10T04:31:59.825Z",
+        "updatedAt": "2022-11-10T04:31:59.825Z"
+    }
+
+
+

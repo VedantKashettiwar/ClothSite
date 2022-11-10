@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router()
 
-const{createProducts,getProducts,getProductsO,updateProducts,deleteProducts} = require('../controllers/main')
+const{createProducts,getProducts,getProductOne, getProductOneWithPopulate, getProductsByPagination,updateProducts,deleteProducts} = require('../controllers/products')
 
 
 router.route('/create/').post(createProducts)
 router.route('/read/').get(getProducts)
-router.route('/reado/:_id').post(getProductsO)
-router.route('/update/:_id').patch(updateProducts)
+router.route('/readone/:_id').get(getProductOne)
+router.route('/readonewithpopulate/:_id').get(getProductOneWithPopulate)
+router.route('/readbypagination/').get(getProductsByPagination)
+router.route('/update/:_id').put(updateProducts)
 router.route('/delete/:_id').delete(deleteProducts)
 
 module.exports = router

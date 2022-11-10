@@ -2,9 +2,10 @@ const { ObjectId } = require('bson');
 const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
-    cat_id:{
+    catid:{
+        required:true,
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Categorys' 
+        ref: 'Categorys'
     },
     name:{
         type:String,
