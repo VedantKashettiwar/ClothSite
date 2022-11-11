@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router()
 
-const{createCustomers, createCustomersmany, getCustomers, getCustomerOne, updateCustomers, deleteCustomers, getCustomersWithProject, getCustomersByPagination} = require('../controllers/customers')
+const{createCustomers, createCustomersMany, createCustomersManyByloop, getCustomers, getCustomerOne, updateCustomer, deleteCustomer, getCustomersWithProject, getCustomersByPagination} = require('../controllers/customers')
     
 
 router.route('/create/').post(createCustomers)
-router.route('/createmany/').post(createCustomersmany)
+router.route('/createmany/').post(createCustomersMany)
+router.route('/createmanycustomer/').post(createCustomersManyByloop)
 router.route('/read/').get(getCustomers)
 router.route('/readone/').get(getCustomerOne)
 router.route('/readwithproject/').get(getCustomersWithProject)
 router.route('/readbypagination/').get(getCustomersByPagination)
-router.route('/update/:_id').put(updateCustomers)
-router.route('/delete/:_id').delete(deleteCustomers)
+router.route('/update/:_id').put(updateCustomer)
+router.route('/delete/:_id').delete(deleteCustomer)
 
 module.exports = router
 

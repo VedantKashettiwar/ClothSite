@@ -43,7 +43,7 @@ const getProducts = async (req, res) => {
         res.status(200).json(result)
     }
     catch (err) {
-        res.status(500).send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
@@ -55,7 +55,7 @@ const getProductOne = async (req, res) => {
         res.status(200).json(result)
     }
     catch (err) {
-        res.status(500).send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
@@ -67,22 +67,23 @@ const getProductOneWithPopulate = async(req,res)=>{
         res.status(200).json(result)
     }
     catch(err){
-        res.status(500).send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
 
 const getProductsByPagination = async(req,res)=>{
     try{
+        const{page,limit} = req.query
         const result = await Products.aggregate([
-            {$limit:4},
-            {$skip:1},
-            {$sort:{name:-1}}
+            {$skip:(page-1)*limit},
+            {$limit:limit*1},
+            {$sort:{name:1}}
         ])
         res.status(200).json(result)
     }
     catch(err){
-        res.status(500).send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
@@ -99,33 +100,33 @@ const createProducts = async (req, res) => {
         }
     }
     catch (err) {
-        res.status(500).send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
 
-const updateProducts = async (req, res) => {
+const updateProduct = async (req, res) => {
     try {
         const data = req.body
         const result = await Products.findByIdAndUpdate({ _id: req.params._id }, data, { new: true, runValidators: true })
         res.status(200).json(result)
     }
     catch (err) {
-        res.status(500).send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
 
-const deleteProducts = async (req, res) => {
+const deleteProduct = async (req, res) => {
     try {
         const data = req.params._id
-        const result = await Products.deleteOne({ _id: data })
+        const result = await Products.findByIdAndDelete({ _id: data })
         res.status(200).json(result)
     }
     catch (err) {
-        res.status(500).send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
 
-module.exports = { getProducts, createProducts, deleteProducts, getProductOne, getProductOneWithPopulate, getProductsByPagination, updateProducts}
+module.exports = { getProducts, createProducts, deleteProduct, getProductOne, getProductOneWithPopulate, getProductsByPagination, updateProduct}

@@ -1,75 +1,83 @@
 const Ajv = require("ajv")
 const ajv = new Ajv()
-const {Customer_Infos} = require('./exp')
+const { Customer_Infos } = require('./exp')
 
 //schemas of customer, product
-const SchemaC = {
+const SchemaCustomer = {
     type: 'object',
     properties: {
-    catid:{
-        type:'string'
-    },
-    name:{
-        type:'string'
-    },
-    phone:{
-        // type:Number,
-        type:'string'
-    },
-    email:{
-        type:'string'
-    },
-    dob:{
-        type:'string'
-    },
-    pass:{
-        type:'string'
-    },
-    address:{
-        type:'string'
-        }
+        catid: {
+            type: 'string'
         },
-        required:["name","phone","email","dob","pass","address"]
+        name: {
+            type: 'string'
+        },
+        phone: {
+            // type:Number,
+            type: 'string'
+        },
+        email: {
+            type: 'string'
+        },
+        dob: {
+            type: 'string'
+        },
+        pass: {
+            type: 'string'
+        },
+        address: {
+            type: 'string'
+        }
+    },
+    required: ["name", "phone", "email", "dob", "pass", "address"]
 
 }
-const SchemaCm = {
+const SchemaCustomerMany = {
     type: 'array',
     properties: {
-    catid:{
-        type:'string'
-    },
-    name:{
-        type:'string'
-    },
-    phone:{
-        type:'string'
-    },
-    email:{
-        type:'string'
-    },
-    dob:{
-        type:'string'
-    },
-    pass:{
-        type:'string'
-    },
-    address:{
-        type:'string'
-        }
+        catid: {
+            type: 'string'
         },
-        required:["name","phone","email","dob","pass","address"]
+        name: {
+            type: 'string'
+        },
+        phone: {
+            type: 'string'
+        },
+        email: {
+            type: 'string'
+        },
+        dob: {
+            type: 'string'
+        },
+        pass: {
+            type: 'string'
+        },
+        address: {
+            type: 'string'
+        }
+    },
+    required: ["name", "phone", "email", "dob", "pass", "address"]
 
 }
 
-
+let a = {
+    options: {
+        page:1,
+        limit:1,
+        keyword:""
+    },
+    results:[{},{}],
+    totalcount:10
+}
 //customers function
 const getCustomers = async (req, res) => {
     try {
         const result = await Customer_Infos.find()
-        res.send(result)
+        res.status(200).json(result)
     }
     catch (err) {
-        res.send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
@@ -78,39 +86,43 @@ const getCustomerOne = async (req, res) => {
     try {
         const data = req.query._id
         const result = await Customer_Infos.findOne({ _id: data })
-        res.send(result)
+        res.status(200).json(result)
     }
     catch (err) {
-        res.send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
 
-const getCustomersWithProject = async(req,res)=>{
-    try{
+const getCustomersWithProject = async (req, res) => {
+    try {
         const result = await Customer_Infos.aggregate([
-            {$project:{
-                _id:0,
-                name:1,
-                phone:1,
-                email:1
-            }}
+            {
+                $project: {
+                    _id: 0,
+                    name: 1,
+                    phone: 1,
+                    email: 1
+                }
+            }
         ])
-        res.send(result)
+        res.status(200).json(result)
     }
-    catch(err){
-        res.send(err.message)
+    catch (err) {
+        res.status(500).json(err.message)
     }
 }
 
 
 const getCustomersByPagination = async (req, res) => {
     try {
-        const result = await Customer_Infos.find().skip(1).limit(3).sort({name:1})
-        res.send(result)
+        let page = req.query.page
+        let limit = req.query.limit
+        const result = await Customer_Infos.find().skip((page - 1) * limit).limit(limit * 1).sort({ name: 1 })
+        res.status(200).json(result)
     }
     catch (err) {
-        res.send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
@@ -118,59 +130,94 @@ const getCustomersByPagination = async (req, res) => {
 const createCustomers = async (req, res) => {
     try {
         let data = req.body
-        const validate = ajv.compile(SchemaC)
+        const validate = ajv.compile(SchemaCustomer)
         const valid = validate(data)
+        const add = new Customer_Infos(data)
         if (!valid) throw new Error(validate.errors[0].message)
         else {
-            const result = await Customer_Infos.insertMany([data])
-            res.send(result)
+            const result = await add.save()
+            res.status(200).json(result)
         }
     }
     catch (err) {
-        res.send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
 
-const createCustomersmany = async (req, res) => {
+const createCustomersMany = async (req, res) => {
     try {
         let data = req.body
-        const validate = ajv.compile(SchemaCm)
-        const valid = validate(data)
-        if (!valid) throw new Error(validate.errors[0].message)
+        let length = data.length
+        if (length === 0) {
+            throw new Error('Add Customers')
+        }
         else {
-            const result = await Customer_Infos.insertMany(data)
-            res.send(result)
+            const validate = ajv.compile(SchemaCustomerMany)
+            const valid = validate(data)
+            if (!valid) throw new Error(validate.errors[0].message)
+            else {
+                const result = await Customer_Infos.insertMany(data)
+                res.status(200).json(result)
+            }
         }
     }
     catch (err) {
-        res.send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
 
-const updateCustomers = async (req, res) => {
+const createCustomersManyByloop = async (req, res) => {
+    try {
+        let data = req.body
+        let length = data.length
+        if (length === 0) {
+            throw new Error('Add Customers')
+        }
+        else {
+            const validate = ajv.compile(SchemaCustomerMany)
+            const valid = validate(data)
+            if (!valid) throw new Error(validate.errors[0].message)
+            else {
+                for (i of data) {
+                    const add = new Customer_Infos(i)
+                    await add.save()
+                }
+                res.status(200).json(data)
+            }
+        }
+    }
+    catch (err) {
+        res.status(500).json(err.message)
+    }
+}
+
+
+const updateCustomer = async (req, res) => {
     try {
         const data = req.body
         const result = await Customer_Infos.findByIdAndUpdate({ _id: req.params._id }, data, { new: true, runValidators: true })
-        res.send(result)
+        res.status(200).json(result)
     }
     catch (err) {
-        res.send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
 
-const deleteCustomers = async (req, res) => {
+const deleteCustomer = async (req, res) => {
     try {
         const data = req.params._id
-        const result = await Customer_Infos.deleteOne({ _id: data })
-        res.send("Deleted Succesfully")
+        const result = await Customer_Infos.findByIdAndDelete({ _id: data })
+        res.status(200).json(result)
     }
     catch (err) {
-        res.send(err.message)
+        res.status(500).json(err.message)
     }
 }
 
 
-module.exports = { getCustomers, createCustomers, createCustomersmany, deleteCustomers, getCustomerOne, getCustomersByPagination, getCustomersWithProject, updateCustomers}
+
+
+module.exports = { getCustomers, createCustomers, createCustomersMany, createCustomersManyByloop, deleteCustomer, getCustomerOne, getCustomersByPagination, getCustomersWithProject, updateCustomer }
