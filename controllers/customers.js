@@ -13,7 +13,6 @@ const SchemaCustomer = {
             type: 'string'
         },
         phone: {
-            // type:Number,
             type: 'string'
         },
         email: {
@@ -63,12 +62,12 @@ const SchemaCustomerMany = {
 
 let a = {
     options: {
-        page:1,
-        limit:1,
-        keyword:""
+        page: 1,
+        limit: 1,
+        keyword: ""
     },
-    results:[{},{}],
-    totalcount:10
+    results: [{}, {}],
+    totalcount: 10
 }
 //customers function
 const getCustomers = async (req, res) => {
@@ -129,7 +128,7 @@ const getCustomersByPagination = async (req, res) => {
 
 const createCustomers = async (req, res) => {
     try {
-        let data = req.body
+        const data = req.body
         const validate = ajv.compile(SchemaCustomer)
         const valid = validate(data)
         const add = new Customer_Infos(data)
@@ -218,6 +217,68 @@ const deleteCustomer = async (req, res) => {
 }
 
 
+const getCustomersByKeyword = async (req, res) => {
+    try {
+        let data = req.query
+        data = data.name.trim()
+        if (data == '') {
+            throw new Error('Enter Name')
+        }
+        else {
+            const result = await Customer_Infos.find({ name: { $regex: data, $options: "$i" } })
+            res.status(200).json(result)
+        }
+    }
+    catch (err) {
+        res.status(500).json(err.message)
+    }
+}
 
 
-module.exports = { getCustomers, createCustomers, createCustomersMany, createCustomersManyByloop, deleteCustomer, getCustomerOne, getCustomersByPagination, getCustomersWithProject, updateCustomer }
+const getCustomersUsingPaginationByKeyword = async (req, res) => {
+    try {
+        let data = req.query
+        Name = data.name.trim()
+        let page = data.page
+        let limit = data.limit
+        if (Name == '') {
+            const result = await Customer_Infos.find().skip((page - 1) * limit).limit(limit * 1)
+            const output = {
+                options:{
+                    page:page,
+                    limit:limit,
+                    keyword:Name,
+                },
+                results:result,
+                totalcount:result.length
+            }
+            res.status(200).json(output)
+        }
+        else {
+            const result = await Customer_Infos.aggregate([
+                { $match: { name: { $regex: Name, $options: "$i" } } },
+                { $skip: (page - 1) * limit },
+                { $limit: limit * 1 },
+                { $sort: { name: 1 } },
+            ])
+            const output = {
+                options:{
+                    page:page,
+                    limit:limit,
+                    keyword:Name,
+                },
+                results:result,
+                totalcount:result.length
+            }
+            res.status(200).json(output)
+        }
+    }
+    catch (err) {
+        res.status(500).json(err.message)
+    }
+}
+
+
+
+
+module.exports = { getCustomers, createCustomers, createCustomersMany, createCustomersManyByloop, deleteCustomer, getCustomerOne, getCustomersByPagination, getCustomersWithProject, updateCustomer, getCustomersByKeyword, getCustomersUsingPaginationByKeyword }
