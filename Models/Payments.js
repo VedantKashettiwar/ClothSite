@@ -2,11 +2,6 @@ const { ObjectId } = require('bson');
 const mongoose = require('mongoose');
 
 const PaymentsSchema = new mongoose.Schema({
-    pay_id:{
-        type: String,
-        required:true,
-        unique:true
-    },
     amount:{
         type:Number,
         required:true
@@ -39,7 +34,6 @@ const PaymentsSchema = new mongoose.Schema({
     },
     tax:{
         type:Number,
-        required:true,
         default:18
     }
 },

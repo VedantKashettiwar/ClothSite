@@ -12,7 +12,7 @@ const OrdersSchema = new mongoose.Schema({
     },
     pay_id:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Payments' 
+        ref: 'Payments'
     },
     o_date_time:{
         type:Date,
@@ -27,8 +27,12 @@ const OrdersSchema = new mongoose.Schema({
         type:Number,
         required:true
     },
-    address:{
-        type:String,
+    colors:{
+        type:Array,
+        required:true
+    },
+    sizes:{
+        type:Array,
         required:true
     },
     amount:{
@@ -41,7 +45,6 @@ const OrdersSchema = new mongoose.Schema({
     },
     tax:{
         type:Number,
-        required:true,
         default:18
     }
 },
@@ -64,3 +67,13 @@ module.exports =mongoose.model('Orders', OrdersSchema)
 // subtotal : Number,
 // tax : Number,
 // discount : Number,
+
+// const a={
+//     pid:"6371d87c1355ca19814edcd0",
+//     cid:"6371cec11a6937501246fcbc",
+//     pay_id:"",
+//     delivery_status:'Complete',
+//     quantity:1,
+//     amount:780,
+//     subtotal:920.4
+// }

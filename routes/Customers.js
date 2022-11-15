@@ -6,7 +6,7 @@ const{createCustomers, createCustomersMany, createCustomersManyByloop, getCustom
 
 router.route('/create/').post(createCustomers)
 router.route('/createmany/').post(createCustomersMany)
-router.route('/createmanycustomer/').post(createCustomersManyByloop)
+router.route('/createmanycustomers/').post(createCustomersManyByloop)
 router.route('/read/').get(getCustomers)
 router.route('/readone/').get(getCustomerOne)
 router.route('/readbykeyword/').get(getCustomersByKeyword)
