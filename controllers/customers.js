@@ -256,10 +256,18 @@ const getCustomersUsingPaginationByKeyword = async (req, res) => {
         }
         else {
             const result = await Customer_Infos.aggregate([
-                { $match: { name: { $regex: Name, $options: "$i" } } },
-                { $skip: (page - 1) * limit },
-                { $limit: limit * 1 },
-                { $sort: { name: 1 } },
+                {$facet:{
+                    count:[
+                        { $match: { name: { $regex: Name, $options: "$i" } } },
+                        { $count:"name"}
+                    ],
+                    paginationResult:[
+                        { $match: { name: { $regex: Name, $options: "$i" } } },
+                        { $skip: (page - 1) * limit },
+                        { $limit: limit * 1 },
+                        { $sort: { name: 1 } }
+                    ]
+                }}
             ])
             const output = {
                 options:{
@@ -267,8 +275,8 @@ const getCustomersUsingPaginationByKeyword = async (req, res) => {
                     limit:limit,
                     keyword:Name,
                 },
-                results:result,
-                totalcount:result.length
+                results:result[0].paginationResult,
+                totalcount:result[0].count[0].name
             }
             res.status(200).json(output)
         }
