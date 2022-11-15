@@ -39,7 +39,7 @@ const OrdersSchema = new mongoose.Schema({
         type:Number,
         required:true
     },
-    subtotal:{
+    total:{
         type:Number,
         required:true
     },

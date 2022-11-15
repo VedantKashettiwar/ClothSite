@@ -28,7 +28,7 @@ const PaymentsSchema = new mongoose.Schema({
         type:Date,
         default:Date.now()
     },
-    subtotal:{
+    total:{
         type:Number,
         required:true
     },

@@ -37,37 +37,38 @@ const createOrder = async (req, res) => {
         const valid = validate(data)
         if (!valid) throw new Error(validate.errors[0].message)
         else {
-            let fetchAmount = await Products.find({ _id: req.body.pid }, { price: 1, _id: 0 })
-            fetchAmount = fetchAmount[0].price * req.body.quantity
+            let fetchAmount = await Products.findOne({ _id: req.body.pid }, { price: 1, _id: 0 })
+            fetchAmount = fetchAmount.price * req.body.quantity
             const newOrder = {
-                pid: req.body.pid,
-                cid: req.body.cid,
-                quantity: req.body.quantity,
-                colors: req.body.colors,
-                sizes: req.body.sizes,
+                pid: data.pid,
+                cid: data.cid,
+                quantity: data.quantity,
+                colors: data.colors,
+                sizes: data.sizes,
                 amount: fetchAmount,
-                subtotal: ((fetchAmount * 18) / 100) + fetchAmount
+                total: ((fetchAmount * 18) / 100) + fetchAmount
             }
-            const add = new Orders(newOrder)
-            const order = await add.save()
+            const addOrder = new Orders(newOrder)
+            const order = await addOrder.save()
             const pay = {
                 amount: order.amount,
-                pay_type: req.body.pay_type,
-                pay_status: req.body.pay_status,
+                pay_type: data.pay_type,
+                pay_status: data.pay_status,
                 oid: order._id,
-                cid: req.body.cid,
-                subtotal: order.subtotal
+                cid: data.cid,
+                total: order.total
             }
             let addPayment = new Payments(pay)
             addPayment = await addPayment.save()
             await Orders.updateOne({ _id: order._id }, { $set: { pay_id: addPayment._id } })
             await Products.updateOne({ _id: req.body.pid }, { $inc: { stock: -req.body.quantity } })
-            const showDetails = await Orders.find({ _id: order._id }).populate('cid').populate('pid').populate('pay_id')
+            const showDetails = await Orders.findOne({ _id: order._id }).populate('cid').populate('pid').populate('pay_id')
             res.status(200).json(showDetails)
         }
     }
     catch (err) {
         res.status(500).json(err.message)
+        console.log(err)
     }
 }
 
