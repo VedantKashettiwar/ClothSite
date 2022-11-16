@@ -69,3 +69,57 @@
 
 
 
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+        const trial = await Payments.distinct("cid")
+        const array=[]
+        const id =ObjectId("6371cec11a6937501246fcbc")
+        let result = await Payments.aggregate([
+            {$match:{cid:id}},
+            {$facet:{
+                Paid:[
+                    {$match:{pay_status:"Paid"}},
+                    {$project:{pay_status:1,total:1,_id:0}}
+                ],
+                Unpaid:[
+                    {$match:{pay_status:"Unpaid"}},
+                    {$project:{pay_status:1,total:1,_id:0}}
+                ]
+            }}
+        ])
+        resultOfPaid = result[0].Paid //making an array of object of Pay_status:Paid
+        resultOfUnpaid = result[0].Unpaid //making an array of object of Pay_status:Unpaid
+        let paid = 0;
+        let unpaid = 0;
+        resultOfPaid.forEach(function (Item) {
+            paid= paid+Item.total;
+        });
+        resultOfUnpaid.forEach(function (Item) {
+            unpaid= unpaid+Item.total;
+        }); 
+        const status =()=>{
+            if(unpaid === 0){
+                return "Paid"
+            }
+            else{
+                return "Unpaid"
+            }
+        }
+        const output ={
+            CustomerID:id,
+            Paid:paid,
+            Unpaid:unpaid,
+            Status:status()
+        }
+        array.push(output)
+
+-----------------------------------------------------------------------------------------------------

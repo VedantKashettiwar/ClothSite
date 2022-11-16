@@ -1,5 +1,7 @@
 const Ajv = require("ajv")
 const ajv = new Ajv()
+const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
 const { Orders, Payments, Products } = require('./exp')
 
 const createOrder = async (req, res) => {
@@ -73,62 +75,131 @@ const createOrder = async (req, res) => {
 }
 
 
-const readOrderOne = async (req,res) => {
-    try{
+const readOrderOne = async (req, res) => {
+    try {
         const id = req.query.id
-        const showDetails = await Orders.findOne({_id:id}).populate('cid').populate('pid').populate('pay_id')
+        const showDetails = await Orders.findOne({ _id: id }).populate('cid').populate('pid').populate('pay_id')
         res.status(200).json(showDetails)
     }
-    catch(err){
+    catch (err) {
         res.status(500).json(err.message)
     }
 }
 
 
-const readOrder = async (req,res) => {
-    try{
+const readOrder = async (req, res) => {
+    try {
         const showDetails = await Orders.find()
         res.status(200).json(showDetails)
     }
-    catch(err){
+    catch (err) {
         res.status(500).json(err.message)
     }
 }
 
 
-const updateOrder = async (req,res) => {
-    try{
+const updateOrder = async (req, res) => {
+    try {
         const id = req.params.id
         const data = req.body
-        const result = await Orders.findByIdAndUpdate({ _id:id }, data, { new: true, runValidators: true })
+        const result = await Orders.findByIdAndUpdate({ _id: id }, data, { new: true, runValidators: true })
         res.status(200).json(result)
     }
-    catch(err){
+    catch (err) {
         res.status(500).json(err.message)
     }
 }
 
 
-const deleteOrder = async (req,res) => {
-    try{
+const deleteOrder = async (req, res) => {
+    try {
         const data = req.params._id
         const result = await Orders.findByIdAndDelete({ _id: data })
         res.status(200).json(result)
     }
-    catch(err){
+    catch (err) {
         res.status(500).json(err.message)
     }
 }
 
 
-const aggregatePaymentStatusAndCustomers =async(req,res)=>{
-    try{
-        
+// const aggregatePaymentStatusAndCustomers = async (req, res) => {
+//     try {
+//         const finalOutput = async () => {
+//             let trial = await Payments.distinct("cid")
+//             let array = []
+//             for (i in trial) {
+//                 const id = trial[i]
+//                 let result = await Payments.aggregate([
+//                     { $match: { cid: id } },
+//                     {
+//                         $facet: {
+//                             Paid: [
+//                                 { $match: { pay_status: "Paid" } },
+//                                 { $project: { pay_status: 1, total: 1, _id: 0 } }
+//                             ],
+//                             Unpaid: [
+//                                 { $match: { pay_status: "Unpaid" } },
+//                                 { $project: { pay_status: 1, total: 1, _id: 0 } }
+//                             ]
+//                         }
+//                     }
+//                 ])
+//                 resultOfPaid = result[0].Paid //making an array of object of Pay_status:Paid
+//                 resultOfUnpaid = result[0].Unpaid //making an array of object of Pay_status:Unpaid
+//                 let paid = 0;
+//                 let unpaid = 0;
+//                 resultOfPaid.forEach(function (Item) {
+//                     paid = paid + Item.total;
+//                 });
+//                 resultOfUnpaid.forEach(function (Item) {
+//                     unpaid = unpaid + Item.total;
+//                 });
+//                 const status = () => {
+//                     if (unpaid === 0) {
+//                         return "Paid"
+//                     }
+//                     else {
+//                         return "Unpaid"
+//                     }
+//                 }
+//                 const output = {
+//                     CustomerID: id,
+//                     Paid: paid,
+//                     Unpaid: unpaid,
+//                     Total:paid+unpaid,
+//                     Status: status()
+//                 }
+//                 array.push(output)
+//             }
+//             return array
+//         }
+//         finalOutput().then((array) => res.status(200).json(array))
+//     }
+//     catch (err) {
+//         res.status(500).json(err.message)
+//     }
+// }
+
+const aggregatePaymentStatusAndCustomers = async (req, res) => {
+    try {
+        const result = await Orders.aggregate([
+            // {$match:{cid:ObjectId("6371cec11a6937501246fcbc")}},
+            {$project:{_id:0,cid:1,pay_id:1}},
+            {$lookup:{
+                from: "payments",
+                localField:"pay_id",
+                foreignField: "_id",
+                as:"payment"
+            }},
+            {$match:{$or:[{"payment.pay_status":"Paid"},{"payment.pay_status":"Unpaid"}]}},
+            {$project:{"payment.pay_status":1,cid:1}}
+        ])
         res.status(200).json(result)
     }
-    catch(err){
+    catch (err) {
         res.status(500).json(err.message)
     }
 }
 
-module.exports = { createOrder,readOrderOne,readOrder,updateOrder,deleteOrder,aggregatePaymentStatusAndCustomers}
+module.exports = { createOrder, readOrderOne, readOrder, updateOrder, deleteOrder, aggregatePaymentStatusAndCustomers }
