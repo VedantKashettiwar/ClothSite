@@ -184,17 +184,45 @@ const deleteOrder = async (req, res) => {
 const aggregatePaymentStatusAndCustomers = async (req, res) => {
     try {
         const result = await Orders.aggregate([
-            // {$match:{cid:ObjectId("6371cec11a6937501246fcbc")}},
-            {$project:{_id:0,cid:1,pay_id:1}},
-            {$lookup:{
-                from: "payments",
-                localField:"pay_id",
-                foreignField: "_id",
-                as:"payment"
-            }},
-            {$match:{$or:[{"payment.pay_status":"Paid"},{"payment.pay_status":"Unpaid"}]}},
-            {$project:{"payment.pay_status":1,cid:1}}
+            {
+                $lookup: {
+                    from: 'payments',
+                    localField: 'pay_id',
+                    foreignField: '_id',
+                    as: 'status'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'customer_infos',
+                    localField: 'cid',
+                    foreignField: '_id',
+                    as: 'customer'
+                }
+            },
+            { $unwind: "$status" },
+            { $unwind: "$customer" },
+            { $project: { _id: 0, "customer.name": 1, "status.cid": 1, "status.total": 1, "status.pay_status": 1 } },
+            { $addFields: { CustomerID: "$status.cid", CustomerName: "$customer.name", Amount: "$status.total", Status: "$status.pay_status" } },
+            { $project: { status: 0, customer: 0 } },
+
+// {
+//                 $facet: {
+//                     Paid: [
+//                         { $match: { Status: "Paid" } },
+//                         { $group: { _id:{CustomerID:"$CustomerID",CustomerName:"$CustomerName",Status:"$Status"},Paid:{$sum:"$Amount"}}}
+//                     ],
+//                     Unpaid: [
+//                         { $match: { Status: "Unpaid" } },
+//                         { $group: { _id:{ CustomerID:"$CustomerID",CustomerName:"$CustomerName",Status:"$Status"},Unpaid:{$sum:"$Amount"}}}
+//                     ]
+//                 }
+// }
+            {$group:{_id:{CustomerID:"$CustomerID",CustomerName:"$CustomerName",Status:"$Status"},Amount:{$sum:"$Amount"}}},
+            {$project:{_id:0,CustomerID:"$_id.CustomerID",CustomerName:"$_id.CustomerName",Status:"$_id.Status",Amount:1}}
+
         ])
+
         res.status(200).json(result)
     }
     catch (err) {
@@ -202,4 +230,17 @@ const aggregatePaymentStatusAndCustomers = async (req, res) => {
     }
 }
 
+
+// const aggregatePaymentStatusAndCustomers = async (req, res) => {
+//     try {
+//         const result = await Payments.aggregate([
+
+//         ])
+//         const output = 
+//         res.status(200).json(result)
+//     }
+//     catch (err) {
+//         res.status(500).json(err.message)
+//     }
+// }
 module.exports = { createOrder, readOrderOne, readOrder, updateOrder, deleteOrder, aggregatePaymentStatusAndCustomers }
