@@ -1,129 +1,224 @@
- {
-        "_id": "636b768fd579a945118ea2ec",
-        "name": "Oversize",
-        "stock": 400,
-        "price": 780,
-        "colors": [
-            "Black",
-            "Red",
-            "Blue",
-            "Green"
-        ],
-        "sizes": [
-            "S",
-            "M",
-            "L"
-        ],
-        "material": "Cotton",
-        "product_detail": "Don't wash in washing machine",
-        "__v": 0,
-        "createdAt": "2022-11-09T09:44:47.044Z",
-        "updatedAt": "2022-11-09T12:39:31.399Z"
-    },
-    {
-        "_id": "636b9ef00ebdee38578414d9",
-        "name": "Slim Fit Jeans",
-        "stock": 650,
-        "price": 1250,
-        "colors": [
-            "Black",
-            "Blue",
-            "Grey"
-        ],
-        "sizes": [
-            "28",
-            "30",
-            "32",
-            "38",
-            "42"
-        ],
-        "material": "Cotton Denim",
-        "product_detail": "Don't iron",
-        "__v": 0,
-        "createdAt": "2022-11-09T12:37:04.122Z",
-        "updatedAt": "2022-11-09T12:37:04.122Z"
-    },
-    {
-        "_id": "636c7ebf2a4115c146dd35ea",
-        "name": "Slim Fit Jeans",
-        "stock": 650,
-        "price": 1250,
-        "colors": [
-            "Black",
-            "Blue",
-            "Grey"
-        ],
-        "sizes": [
-            "28",
-            "30",
-            "32",
-            "38",
-            "42"
-        ],
-        "material": "Cotton Denim",
-        "product_detail": "Don't iron",
-        "__v": 0,
-        "createdAt": "2022-11-10T04:31:59.825Z",
-        "updatedAt": "2022-11-10T04:31:59.825Z"
-    }
+const aggregateBasedOnCustomers = async (req, res) => {
+  try {
+    const result = await Orders.aggregate([
+      {
+        $lookup: {
+          from: "payments",
+          localField: "pay_id",
+          foreignField: "_id",
+          as: "status",
+        },
+      },
+      {
+        $lookup: {
+          from: "customer_infos",
+          localField: "cid",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+      { $unwind: "$status" },
+      { $unwind: "$customer" },
+      {
+        $project: {
+          _id: 0,
+          "customer.name": 1,
+          "status.cid": 1,
+          "status.total": 1,
+          "status.pay_status": 1,
+        },
+      },
+      {
+        $addFields: {
+          CustomerID: "$status.cid",
+          CustomerName: "$customer.name",
+          Amount: "$status.total",
+          Status: "$status.pay_status",
+        },
+      },
+      { $project: { status: 0, customer: 0 } },
+      {
+        $group: {
+          _id: {
+            CustomerID: "$CustomerID",
+            CustomerName: "$CustomerName",
+            Status: "$Status",
+          },
+          Amount: { $sum: "$Amount" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          CustomerID: "$_id.CustomerID",
+          CustomerName: "$_id.CustomerName",
+          Status: "$_id.Status",
+          Amount: 1,
+        },
+      },
+
+      {
+        $group: {
+          _id: { CustomerID: "$CustomerID", CustomerName: "$CustomerName" },
+          S_Paid: {
+            $push: {
+              $cond: [
+                { $eq: ["$Status", "Paid"] },
+                { Paid: "$Amount" },
+                "$$REMOVE",
+              ],
+            },
+          },
+          S_Unpaid: {
+            $push: {
+              $cond: [
+                { $eq: ["$Status", "Unpaid"] },
+                { Unpaid: "$Amount" },
+                "$$REMOVE",
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          isAnyTrueU: { $anyElementTrue: ["$S_Unpaid"] },
+          isAnyTrueP: { $anyElementTrue: ["$S_Paid"] },
+          _id: 1,
+          CustomerID: "$_id.CustomerID",
+          CustomerName: "$_id.CustomerName",
+          Paid: { $arrayElemAt: ["$S_Paid.Paid", 0] },
+          Unpaid: { $arrayElemAt: ["$S_Unpaid.Unpaid", 0] },
+        },
+      },
+      {
+        $project: {
+          CustomerID: 1,
+          CustomerName: 1,
+          Paid: 1,
+          Unpaid: 1,
+          Unpaid: {
+            $cond: [{ $eq: ["$isAnyTrueU", false] }, 0, { Unpaid: "$Unpaid" }],
+          },
+          Paid: {
+            $cond: [{ $eq: ["$isAnyTrueP", false] }, 0, { Paid: "$Paid" }],
+          }
+        },
+      },
+      {
+        $project: {
+          CustomerID: 1,
+          CustomerName: 1,
+          Paid: { $cond: [{ $eq: ["$Paid", 0] }, 0, "$Paid.Paid"]},
+          Unpaid: { $cond: [{ $eq: ["$Unpaid", 0] }, 0, "$Unpaid.Unpaid"] },
+          _id: 0,
+        },
+      },
+      {
+        $project: {
+          CustomerID: 1,
+          CustomerName: 1,
+          Paid: 1,
+          Unpaid: 1,
+          Total: { $sum: ["$Paid", "$Unpaid"] },
+          Status: { $cond: [{ $eq: ["$Unpaid", 0] }, "Paid", "Unpaid"] },
+        },
+      },
+    ]);
+
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+};
+
+--------------------------------------------------------------------------------------------------------------------------
 
 
 
+const aggregateBasedOnCustomers = async (req, res) => {
+  try {
+    const result = await Orders.aggregate([
+      {
+        $lookup: {
+          from: "payments",
+          localField: "pay_id",
+          foreignField: "_id",
+          as: "status",
+        },
+      },
+      {
+        $lookup: {
+          from: "customer_infos",
+          localField: "cid",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+      { $unwind: "$status" },
+      { $unwind: "$customer" },
+      {
+        $project: {
+          _id: 0,
+          "customer.name": 1,
+          "status.cid": 1,
+          "status.total": 1,
+          "status.pay_status": 1,
+        },
+      },
+      {
+        $addFields: {
+          CustomerID: "$status.cid",
+          CustomerName: "$customer.name",
+          Amount: "$status.total",
+          Status: "$status.pay_status",
+        },
+      },
+      { $project: { status: 0, customer: 0 } },
+      {
+        $group: {
+          _id: {
+            CustomerID: "$CustomerID",
+            CustomerName: "$CustomerName",
+            Status: "$Status",
+          },
+          Amount: { $sum: "$Amount" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          CustomerID: "$_id.CustomerID",
+          CustomerName: "$_id.CustomerName",
+          Status: "$_id.Status",
+          Amount: 1,
+        },
+      },
 
-
-
-
-
-
-
-
-
-----------------------------------------------------------------------------------------------------
-
-        const trial = await Payments.distinct("cid")
-        const array=[]
-        const id =ObjectId("6371cec11a6937501246fcbc")
-        let result = await Payments.aggregate([
-            {$match:{cid:id}},
-            {$facet:{
-                Paid:[
-                    {$match:{pay_status:"Paid"}},
-                    {$project:{pay_status:1,total:1,_id:0}}
-                ],
-                Unpaid:[
-                    {$match:{pay_status:"Unpaid"}},
-                    {$project:{pay_status:1,total:1,_id:0}}
-                ]
-            }}
-        ])
-        resultOfPaid = result[0].Paid //making an array of object of Pay_status:Paid
-        resultOfUnpaid = result[0].Unpaid //making an array of object of Pay_status:Unpaid
-        let paid = 0;
-        let unpaid = 0;
-        resultOfPaid.forEach(function (Item) {
-            paid= paid+Item.total;
-        });
-        resultOfUnpaid.forEach(function (Item) {
-            unpaid= unpaid+Item.total;
-        }); 
-        const status =()=>{
-            if(unpaid === 0){
-                return "Paid"
-            }
-            else{
-                return "Unpaid"
-            }
-        }
-        const output ={
-            CustomerID:id,
-            Paid:paid,
-            Unpaid:unpaid,
-            Status:status()
-        }
-        array.push(output)
-
------------------------------------------------------------------------------------------------------
-
+      {
+        $group: {
+          _id: { CustomerID: "$CustomerID", CustomerName: "$CustomerName" },
+          S_Paid: {
+            $push: {
+              $cond: [
+                { $eq: ["$Status", "Paid"] },
+                { Paid: "$Amount" },
+                "$$REMOVE",
+              ],
+            },
+          },
+          S_Unpaid: {
+            $push: {
+              $cond: [
+                { $eq: ["$Status", "Unpaid"] },
+                { Unpaid: "$Amount" },
+                "$$REMOVE",
+              ],
+            },
+          },
+        },
+      },
+      {$addFields:{Paid:0,Unpaid:0}},
       {
         $project: {
           CustomerID: "$_id.CustomerID",
@@ -133,29 +228,18 @@
           _id: 0,
         },
       },
-      // {
-      //   $project: {
-      //     CustomerID: 1,
-      //     CustomerName: 1,
-      //     Paid: 1,
-      //     Unpaid: 1,
-      //     Total: { $sum: ["$Paid", "$Unpaid"] },
-      //     Status: { $cond: [{ $eq: ["$Unpaid",0] }, "Paid", "Unpaid"] },
-      //   },
-      // }
-
-
-
-
-
-
-
-const lastEntryOfCustomersInOrderTable = async (req, res) => {
-  try {
-    const result = await Orders.aggregate([
-      {$group:{_id:{cid:"$cid"},Data: { "$last": "$$ROOT" }}},
-      {$project:{OrderID:"$Data._id",Pid:"$Data.pid",Cid:"$Data.cid",OrderDateTime:"$Data.o_date_time",DeliveryStatus:"$Data.delivery_status",Quantity:"$Data.quantity",Colors:"$Data.colors",Sizes:"$Data.sizes",Amount:"$Data.amount",Total:"$Data.total",Tax:"$Data.tax",CreatedAt:"$Data.createdAt",UpdatedAt:"$Data.updatedAt",PayId:"$Data.pay_id",_id:0}}
+      {
+        $project: {
+          CustomerID: 1,
+          CustomerName: 1,
+          Paid: 1,
+          Unpaid: 1,
+          Total: { $sum: ["$Paid", "$Unpaid"] },
+          Status: { $cond: [{ $eq: ["$Unpaid", 0] }, "Paid", "Unpaid"] },
+        },
+      }
     ]);
+
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json(err.message);

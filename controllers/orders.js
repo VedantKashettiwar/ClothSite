@@ -358,26 +358,50 @@ const aggregateBasedOnCustomers = async (req, res) => {
           },
         },
       },
-      {$addFields:{Paid:0,Unpaid:0}},
       {
         $project: {
+          isAnyTrueU: { $anyElementTrue: ["$S_Unpaid"] },
+          isAnyTrueP: { $anyElementTrue: ["$S_Paid"] },
+          _id: 1,
           CustomerID: "$_id.CustomerID",
           CustomerName: "$_id.CustomerName",
           Paid: { $arrayElemAt: ["$S_Paid.Paid", 0] },
           Unpaid: { $arrayElemAt: ["$S_Unpaid.Unpaid", 0] },
+        },
+      },
+      {
+        $project: {
+          CustomerID: 1,
+          CustomerName: 1,
+          Paid: 1,
+          Unpaid: 1,
+          Unpaid: {
+            $cond: [{ $eq: ["$isAnyTrueU", false] }, 0, { Unpaid: "$Unpaid" }],
+          },
+          Paid: {
+            $cond: [{ $eq: ["$isAnyTrueP", false] }, 0, { Paid: "$Paid" }],
+          }
+        },
+      },
+      {
+        $project: {
+          CustomerID: 1,
+          CustomerName: 1,
+          Paid: { $cond: [{ $eq: ["$Paid", 0] }, 0, "$Paid.Paid"]},
+          Unpaid: { $cond: [{ $eq: ["$Unpaid", 0] }, 0, "$Unpaid.Unpaid"] },
           _id: 0,
         },
       },
-      // {
-      //   $project: {
-      //     CustomerID: 1,
-      //     CustomerName: 1,
-      //     Paid: 1,
-      //     Unpaid: 1,
-      //     Total: { $sum: ["$Paid", "$Unpaid"] },
-      //     Status: { $cond: [{ $eq: ["$Unpaid", 0] }, "Paid", "Unpaid"] },
-      //   },
-      // }
+      {
+        $project: {
+          CustomerID: 1,
+          CustomerName: 1,
+          Paid: 1,
+          Unpaid: 1,
+          Total: { $sum: ["$Paid", "$Unpaid"] },
+          Status: { $cond: [{ $eq: ["$Unpaid", 0] }, "Paid", "Unpaid"] },
+        },
+      },
     ]);
 
     res.status(200).json(result);
