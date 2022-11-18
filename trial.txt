@@ -124,5 +124,40 @@
 
 -----------------------------------------------------------------------------------------------------
 
+      {
+        $project: {
+          CustomerID: "$_id.CustomerID",
+          CustomerName: "$_id.CustomerName",
+          Paid: { $arrayElemAt: ["$S_Paid.Paid", 0] },
+          Unpaid: { $arrayElemAt: ["$S_Unpaid.Unpaid", 0] },
+          _id: 0,
+        },
+      },
+      // {
+      //   $project: {
+      //     CustomerID: 1,
+      //     CustomerName: 1,
+      //     Paid: 1,
+      //     Unpaid: 1,
+      //     Total: { $sum: ["$Paid", "$Unpaid"] },
+      //     Status: { $cond: [{ $eq: ["$Unpaid",0] }, "Paid", "Unpaid"] },
+      //   },
+      // }
 
-            
+
+
+
+
+
+
+const lastEntryOfCustomersInOrderTable = async (req, res) => {
+  try {
+    const result = await Orders.aggregate([
+      {$group:{_id:{cid:"$cid"},Data: { "$last": "$$ROOT" }}},
+      {$project:{OrderID:"$Data._id",Pid:"$Data.pid",Cid:"$Data.cid",OrderDateTime:"$Data.o_date_time",DeliveryStatus:"$Data.delivery_status",Quantity:"$Data.quantity",Colors:"$Data.colors",Sizes:"$Data.sizes",Amount:"$Data.amount",Total:"$Data.total",Tax:"$Data.tax",CreatedAt:"$Data.createdAt",UpdatedAt:"$Data.updatedAt",PayId:"$Data.pay_id",_id:0}}
+    ]);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+};
