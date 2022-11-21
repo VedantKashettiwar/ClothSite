@@ -5,12 +5,14 @@ const customersRouter = require('./routes/Customers')
 const productsRouter = require('./routes/Products')
 const ordersRouter = require('./routes/Orders')
 const paymentsRouter = require('./routes/Payments')
+const weatherRouter = require('./routes/Weather')
 
 app.use(express.json()) //middleware
 app.use('/api/v1/customers',customersRouter)
 app.use('/api/v1/products/',productsRouter)  
 app.use('/api/v1/orders/',ordersRouter)  
 app.use('/api/v1/payments/',paymentsRouter)  
+app.use('/api/v1/weather/',weatherRouter) 
 
 const startDB = async()=>{
     try{
