@@ -236,19 +236,6 @@ const aggregatePaymentStatusAndCustomers = async (req, res) => {
         },
       },
       { $project: { status: 0, customer: 0 } },
-
-      // {
-      //                 $facet: {
-      //                     Paid: [
-      //                         { $match: { Status: "Paid" } },
-      //                         { $group: { _id:{CustomerID:"$CustomerID",CustomerName:"$CustomerName",Status:"$Status"},Paid:{$sum:"$Amount"}}}
-      //                     ],
-      //                     Unpaid: [
-      //                         { $match: { Status: "Unpaid" } },
-      //                         { $group: { _id:{ CustomerID:"$CustomerID",CustomerName:"$CustomerName",Status:"$Status"},Unpaid:{$sum:"$Amount"}}}
-      //                     ]
-      //                 }
-      // }
       {
         $group: {
           _id: {
@@ -380,16 +367,137 @@ const aggregateBasedOnCustomers = async (req, res) => {
           },
           Paid: {
             $cond: [{ $eq: ["$isAnyTrueP", false] }, 0, { Paid: "$Paid" }],
-          }
+          },
         },
       },
       {
         $project: {
           CustomerID: 1,
           CustomerName: 1,
-          Paid: { $cond: [{ $eq: ["$Paid", 0] }, 0, "$Paid.Paid"]},
+          Paid: { $cond: [{ $eq: ["$Paid", 0] }, 0, "$Paid.Paid"] },
           Unpaid: { $cond: [{ $eq: ["$Unpaid", 0] }, 0, "$Unpaid.Unpaid"] },
           _id: 0,
+        },
+      },
+      {
+        $project: {
+          CustomerID: 1,
+          CustomerName: 1,
+          Paid: 1,
+          Unpaid: 1,
+          Total: { $sum: ["$Paid", "$Unpaid"] },
+          Status: { $cond: [{ $eq: ["$Unpaid", 0] }, "Paid", "Unpaid"] },
+        },
+      },
+    ]);
+
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+};
+
+const aggregateBasedOnCustomersTwo = async (req, res) => {
+  try {
+    const result = await Orders.aggregate([
+      {
+        $lookup: {
+          from: "payments",
+          localField: "pay_id",
+          foreignField: "_id",
+          as: "status",
+        },
+      },
+      {
+        $lookup: {
+          from: "customer_infos",
+          localField: "cid",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+      { $unwind: "$status" },
+      { $unwind: "$customer" },
+      {
+        $project: {
+          _id: 0,
+          "customer.name": 1,
+          "status.cid": 1,
+          "status.total": 1,
+          "status.pay_status": 1,
+        },
+      },
+      {
+        $addFields: {
+          CustomerID: "$status.cid",
+          CustomerName: "$customer.name",
+          Amount: "$status.total",
+          Status: "$status.pay_status",
+        },
+      },
+      { $project: { status: 0, customer: 0 } },
+      {
+        $group: {
+          _id: {
+            CustomerID: "$CustomerID",
+            CustomerName: "$CustomerName",
+            Status: "$Status",
+          },
+          Amount: { $sum: "$Amount" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          CustomerID: "$_id.CustomerID",
+          CustomerName: "$_id.CustomerName",
+          Status: "$_id.Status",
+          Amount: 1,
+        },
+      },
+
+      {
+        $group: {
+          _id: { CustomerID: "$CustomerID", CustomerName: "$CustomerName" },
+          S_Paid: {
+            $push: {
+              $cond: [
+                { $eq: ["$Status", "Paid"] },
+                { Paid: "$Amount" },
+                "$$REMOVE",
+              ],
+            },
+          },
+          S_Unpaid: {
+            $push: {
+              $cond: [
+                { $eq: ["$Status", "Unpaid"] },
+                { Unpaid: "$Amount" },
+                "$$REMOVE",
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          CustomerID: "$_id.CustomerID",
+          CustomerName: "$_id.CustomerName",
+          Paid: {
+            $cond: [
+              { $anyElementTrue: ["$S_Paid"] },
+              { $arrayElemAt: ["$S_Paid.Paid", 0] },
+              0,
+            ],
+          },
+          Unpaid: {
+            $cond: [
+              { $anyElementTrue: ["$S_Unpaid"] },
+              { $arrayElemAt: ["$S_Unpaid.Unpaid", 0] },
+              0,
+            ],
+          },
         },
       },
       {
@@ -413,8 +521,55 @@ const aggregateBasedOnCustomers = async (req, res) => {
 const lastEntryOfCustomersInOrderTable = async (req, res) => {
   try {
     const result = await Orders.aggregate([
-      {$group:{_id:{cid:"$cid"},Data: { "$last": "$$ROOT" }}},
-      {$project:{OrderID:"$Data._id",Pid:"$Data.pid",Cid:"$Data.cid",OrderDateTime:"$Data.o_date_time",DeliveryStatus:"$Data.delivery_status",Quantity:"$Data.quantity",Colors:"$Data.colors",Sizes:"$Data.sizes",Amount:"$Data.amount",Total:"$Data.total",Tax:"$Data.tax",CreatedAt:"$Data.createdAt",UpdatedAt:"$Data.updatedAt",PayId:"$Data.pay_id",_id:0}}
+      { $group: { _id: { cid: "$cid" }, Data: { $last: "$$ROOT" } } },
+      {
+        $project: {
+          OrderID: "$Data._id",
+          Pid: "$Data.pid",
+          Cid: "$Data.cid",
+          OrderDateTime: "$Data.o_date_time",
+          DeliveryStatus: "$Data.delivery_status",
+          Quantity: "$Data.quantity",
+          Colors: "$Data.colors",
+          Sizes: "$Data.sizes",
+          Amount: "$Data.amount",
+          Total: "$Data.total",
+          Tax: "$Data.tax",
+          CreatedAt: "$Data.createdAt",
+          UpdatedAt: "$Data.updatedAt",
+          PayId: "$Data.pay_id",
+          _id: 0,
+        },
+      },
+      {
+        $lookup: {
+          from: "payments",
+          localField: "PayId",
+          foreignField: "_id",
+          as: "pay",
+        },
+      },
+      {
+        $project: {
+          OrderID: 1,
+          Pid: 1,
+          Cid: 1,
+          OrderDateTime: 1,
+          DeliveryStatus: 1,
+          Quantity: 1,
+          Colors: 1,
+          Sizes: 1,
+          Amount: 1,
+          Total: 1,
+          Tax: 1,
+          CreatedAt: 1,
+          UpdatedAt: 1,
+          PayId: 1,
+          PayType: "$pay.pay_type",
+          PayStatus: "$pay.pay_status",
+          PayDateTime: "$pay.pay_date_time",
+        },
+      },
     ]);
     res.status(200).json(result);
   } catch (err) {
@@ -430,4 +585,5 @@ module.exports = {
   aggregatePaymentStatusAndCustomers,
   aggregateBasedOnCustomers,
   lastEntryOfCustomersInOrderTable,
+  aggregateBasedOnCustomersTwo,
 };
